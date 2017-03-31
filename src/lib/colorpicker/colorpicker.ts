@@ -14,7 +14,8 @@ import {
   Self,
   ViewChildren,
   QueryList,
-  ViewContainerRef
+  ViewContainerRef,
+  TemplateRef
 } from '@angular/core';
 import {
   ControlValueAccessor,
@@ -29,6 +30,7 @@ import {
   OverlayRef,
   Portal,
   PortalModule,
+  TemplatePortal,
   TemplatePortalDirective,
   HorizontalConnectionPos,
   VerticalConnectionPos
@@ -200,6 +202,7 @@ export class Md2Colorpicker implements OnDestroy, ControlValueAccessor {
   format: number;
   backColor: boolean = true;
 
+  private _portal: TemplatePortal;
   private _created: boolean;
   private _defalutColor: string = '#000000';  
   private _initialColor: string;
@@ -300,8 +303,9 @@ export class Md2Colorpicker implements OnDestroy, ControlValueAccessor {
   /** Event emitted when the select has been closed. */
   @Output() onClose: EventEmitter<void> = new EventEmitter<void>();
 
-  @ViewChildren(TemplatePortalDirective) templatePortals: QueryList<Portal<any>>;
-  @ViewChildren(TemplatePortalDirective) templatePortal: Portal<any>;
+  /*@ViewChildren(TemplatePortalDirective) templatePortals: QueryList<Portal<any>>;
+  @ViewChildren(TemplatePortalDirective) templatePortal: Portal<any>;*/
+  @ViewChildren('portal') _templatePortal: TemplateRef<any>;
 
   constructor(private _element: ElementRef, private overlay: Overlay,
     private _viewContainerRef: ViewContainerRef, private _renderer: Renderer,
@@ -355,7 +359,13 @@ export class Md2Colorpicker implements OnDestroy, ControlValueAccessor {
     }
 
     this._createOverlay();
-    this._overlayRef.attach(this.templatePortals.first);
+    /*this._overlayRef.attach(this.templatePortals.first);*/
+	if (!this._portal) {
+      this._portal = new TemplatePortal(this._templatePortal, this._viewContainerRef);
+    }
+
+    this._overlayRef.attach(this._portal);
+
     this._subscribeToBackdrop();
     this._panelOpen = true;
     this.onOpen.emit();
