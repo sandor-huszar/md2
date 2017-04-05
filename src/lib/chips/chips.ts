@@ -21,9 +21,15 @@ import {
 
 import { CommonModule } from '@angular/common';
 import { Md2AutocompleteModule } from '../autocomplete/autocomplete';
-import { KeyCodes } from '../core/core';
-
-const noop = () => { };
+import {
+  ENTER,
+  SPACE,
+  BACKSPACE,
+  DELETE,
+  COMMA,
+  LEFT_ARROW,
+  RIGHT_ARROW
+} from '../core/keyboard/keycodes';
 
 export class Chip {
   public text: string;
@@ -97,14 +103,14 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
   _onTouched = () => { };
 
   chipItemList: Array<Chip> = [];
-  inputValue: string = '';  
+  inputValue: string = '';
   selectedChip: number = -1;
   inputFocused: boolean = false;
 
   private _value: any = '';
   private splitRegExp: RegExp;
   private templateHtmlString: any;
-  private item: any;  
+  private item: any;
   private isEmptyAutoComplete: boolean = true;
 
   constructor(private elementRef: ElementRef) { }
@@ -167,15 +173,15 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
     let key = event.keyCode;
     switch (key) {
       // back space
-      case KeyCodes.BACKSPACE:
+      case BACKSPACE:
         this.backspaceEvent();
         break;
       // delete
-      case KeyCodes.DELETE:
+      case DELETE:
         this.backspaceEvent();
         break;
       // left arrow
-      case KeyCodes.LEFT_ARROW:
+      case LEFT_ARROW:
         if (this.isAutoComplete && this.isEmptyAutoComplete) {
           this.leftArrowKeyEvents();
         } else if (!this.isAutoComplete && !this.inputValue) {
@@ -183,7 +189,7 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
         }
         break;
       // right arrow
-      case KeyCodes.RIGHT_ARROW:
+      case RIGHT_ARROW:
         if (this.isAutoComplete && this.isEmptyAutoComplete) {
           this.rightArrowKeyEvents();
         } else if (!this.isAutoComplete && !this.inputValue) {
@@ -191,21 +197,21 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
         }
         break;
       // enter
-      case KeyCodes.ENTER:
+      case ENTER:
         if (this.addOnEnter) {
           this.addNewChip(this.inputValue);
           event.preventDefault();
         }
         break;
       // comma
-      case KeyCodes.COMMA:
+      case COMMA:
         if (this.addOnComma) {
           this.addNewChip(this.inputValue);
           event.preventDefault();
         }
         break;
       // space
-      case KeyCodes.SPACE:
+      case SPACE:
         if (this.addOnSpace) {
           this.addNewChip(this.inputValue);
           event.preventDefault();
@@ -228,8 +234,9 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
 
   inputBlurred(event: Event): void {
     this.inputFocused = false;
-    if (this.inputValue)
+    if (this.inputValue) {
       this.addNewChip(this.inputValue);
+    }
     this._onTouched();
     this.addNewChip(this.inputValue);
   }
@@ -294,7 +301,8 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
     if (validInput) {
       if (this.maxChips) {
         if (this.chipItemList.length < this.maxChips) {
-          this.chipItemList.push(new Chip(chips, this.autocompleteItemText, this.autocompleteItemValue));
+          this.chipItemList.push(new Chip(chips,
+            this.autocompleteItemText, this.autocompleteItemValue));
         }
       } else {
         this.chipItemList.push(new Chip(chips, this.textKey, this.valueKey));
@@ -347,7 +355,7 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
     this._value = new Array<any>();
 
     this._value = this.chipItemList.map((chip: any) => {
-      let a: any = {}
+      let a: any = {};
       a[this.textKey] = chip.text;
       a[this.valueKey] = chip.value;
       return a;

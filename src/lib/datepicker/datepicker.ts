@@ -7,24 +7,18 @@ import {
   Output,
   Optional,
   EventEmitter,
-  Renderer,
   Self,
   TemplateRef,
   ViewChild,
   ViewContainerRef,
   ViewEncapsulation,
-  NgModule,
-  ModuleWithProviders
 } from '@angular/core';
 import {
   ControlValueAccessor,
   NgControl,
-  FormsModule
 } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { DateLocale } from './date-locale';
 import { DateUtil } from './date-util';
-import { Md2Clock } from './clock';
 import {
   coerceBooleanProperty,
   ENTER,
@@ -42,9 +36,7 @@ import {
   Overlay,
   OverlayState,
   OverlayRef,
-  OverlayModule,
   TemplatePortal,
-  PortalModule,
   HorizontalConnectionPos,
   VerticalConnectionPos,
 } from '../core';
@@ -75,9 +67,6 @@ export type PanelPositionY = 'above' | 'below';
     '[attr.aria-required]': 'required.toString()',
     '[attr.aria-disabled]': 'disabled.toString()',
     '[attr.aria-invalid]': '_control?.invalid || "false"',
-    '(keydown)': '_handleKeydown($event)',
-    '(focus)': '_onFocus()',
-    '(blur)': '_onBlur()',
     '(window:resize)': '_handleWindowResize($event)'
   },
   animations: [
@@ -144,7 +133,7 @@ export class Md2Datepicker implements OnDestroy, ControlValueAccessor {
   /** Event emitted when the selected date has been changed by the user. */
   @Output() change: EventEmitter<Md2DateChange> = new EventEmitter<Md2DateChange>();
 
-  constructor(private _element: ElementRef, private overlay: Overlay, private _renderer: Renderer,
+  constructor(private _element: ElementRef, private overlay: Overlay,
     private _viewContainerRef: ViewContainerRef, private _locale: DateLocale,
     private _util: DateUtil, @Self() @Optional() public _control: NgControl) {
     if (this._control) {
@@ -369,7 +358,7 @@ export class Md2Datepicker implements OnDestroy, ControlValueAccessor {
   }
 
   private _focusHost(): void {
-    this._renderer.invokeElementMethod(this._element.nativeElement, 'focus');
+    this._element.nativeElement.querySelectorAll('input')[0].focus();
   }
 
   private coerceDateProperty(value: any): Date {
@@ -513,12 +502,6 @@ export class Md2Datepicker implements OnDestroy, ControlValueAccessor {
     }
   }
 
-  _onFocus() {
-    if (!this.panelOpen && this.openOnFocus) {
-      this.open();
-    }
-  }
-
   _onBlur() {
     if (!this.panelOpen) {
       this._onTouched();
@@ -527,6 +510,9 @@ export class Md2Datepicker implements OnDestroy, ControlValueAccessor {
 
   _handleFocus(event: Event) {
     this._inputFocused = true;
+    if (!this.panelOpen && this.openOnFocus) {
+      this.open();
+    }
   }
 
   _handleBlur(event: Event) {
@@ -546,6 +532,7 @@ export class Md2Datepicker implements OnDestroy, ControlValueAccessor {
     event.stopPropagation();
     this.value = null;
     this._emitChangeEvent();
+    this._focusHost();
   }
 
   /**
@@ -863,21 +850,4 @@ export class Md2Datepicker implements OnDestroy, ControlValueAccessor {
     setTimeout(() => this._calendarState = '', 180);
   }
 
-}
-
-export const MD2_DATEPICKER_DIRECTIVES = [Md2Datepicker, Md2Clock];
-
-@NgModule({
-  imports: [CommonModule, FormsModule, OverlayModule, PortalModule],
-  exports: MD2_DATEPICKER_DIRECTIVES,
-  declarations: MD2_DATEPICKER_DIRECTIVES,
-  providers: [DateLocale, DateUtil]
-})
-export class Md2DatepickerModule {
-  static forRoot(): ModuleWithProviders {
-    return {
-      ngModule: Md2DatepickerModule,
-      providers: []
-    };
-  }
 }
