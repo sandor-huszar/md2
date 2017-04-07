@@ -161,8 +161,8 @@ export class DateUtil {
         }
       }
     }
-    let d = new Date(ctorArgs[0], ctorArgs[1], ctorArgs[2], ctorArgs[3], ctorArgs[4],
-      ctorArgs[5], ctorArgs[6]);
+    let d = new Date(Date.UTC(ctorArgs[0], ctorArgs[1], ctorArgs[2], ctorArgs[3], ctorArgs[4],
+      ctorArgs[5], ctorArgs[6]));
     return d;
   }
 

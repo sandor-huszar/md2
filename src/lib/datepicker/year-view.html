@@ -4,6 +4,6 @@
                    [todayValue]="_todayMonth"
                    [selectedValue]="_selectedMonth"
                    [labelMinRequiredCells]="2"
-                   [activeCell]="activeDate.month"
+                   [activeCell]="activeDate.getMonth()"
                    (selectedValueChange)="_monthSelected($event)">
 </md2-calendar-table>
