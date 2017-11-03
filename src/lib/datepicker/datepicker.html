@@ -21,6 +21,7 @@
            [disabled]="disabled"
            [value]="value | date:format"
            autocomplete="off"
+		   [readonly]="readonly"
            (change)="$event.stopPropagation()"
            (focus)="_handleFocus($event)"
            (blur)="_handleBlur($event)"

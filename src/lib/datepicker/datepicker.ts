@@ -154,6 +154,7 @@ export class Md2Datepicker implements OnDestroy, ControlValueAccessor {
   @Input() enableDates: Array<Date> = [];
   @Input() disableDates: Array<Date> = [];
   @Input() disableWeekDays: Array<number> = [];
+  @Input() readonly: boolean = false;
 
   /** Position of the menu in the X axis. */
   positionX: PanelPositionX = 'after';
@@ -347,7 +348,7 @@ export class Md2Datepicker implements OnDestroy, ControlValueAccessor {
   }
 
   _handleWindowResize(event: Event) {
-    if (this.container === 'inline') {
+    if (this.container === 'inline' && this.panelOpen) {
       this.close();
     }
   }
