@@ -1,9 +1,8 @@
 import { Component } from '@angular/core';
 
 @Component({
-  moduleId: module.id,
   selector: 'md-chips-demo',
-  templateUrl: 'chips-demo.html'
+  templateUrl: '../chips/chips-demo.html'
 })
 export class ChipsDemo {
   isDisabled: boolean = false;
@@ -20,8 +19,4 @@ export class ChipsDemo {
     { text: 'Mumbaia', id: '2' },
     { text: 'Goaa', id: '4' }
   ];
-  private _validPattern = /^[0-9]*$/;
-  handleChange(value: any) {
-    console.log('Changed data: ', value);
-  }
 }

@@ -1,15 +1,19 @@
 import {
-  Component,
-  ViewEncapsulation,
+  AfterContentInit,
   ChangeDetectionStrategy,
-  Input,
+  Component,
   EventEmitter,
+  Inject,
+  Input,
+  Optional,
   Output,
-  AfterContentInit
+  ViewEncapsulation
 } from '@angular/core';
-import { Md2CalendarCell } from './calendar-table';
 import { DateLocale } from './date-locale';
 import { DateUtil } from './date-util';
+import { Md2CalendarCell } from './calendar-body';
+import { MD_DATE_FORMATS, MdDateFormats } from '../core/datetime/date-formats';
+import { slideCalendar } from './datepicker-animations';
 
 
 const DAYS_PER_WEEK = 7;
@@ -23,6 +27,7 @@ const DAYS_PER_WEEK = 7;
   moduleId: module.id,
   selector: 'md2-month-view',
   templateUrl: 'month-view.html',
+  animations: [slideCalendar],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -31,21 +36,27 @@ export class Md2MonthView implements AfterContentInit {
    * The date to display in this month view (everything other than the month and year is ignored).
    */
   @Input()
-  get activeDate() { return this._activeDate; }
-  set activeDate(value) {
+  get activeDate(): Date { return this._activeDate; }
+  set activeDate(value: Date) {
     let oldActiveDate = this._activeDate;
-    this._activeDate = this._locale.parseDate(value) || this._util.today();
-    if (!this._util.isSameMonthAndYear(oldActiveDate, this._activeDate)) {
+    this._activeDate = value || this._util.today();
+    if (oldActiveDate && this._activeDate &&
+      !this._util.isSameMonthAndYear(oldActiveDate, this._activeDate)) {
       this._init();
+      if (this._util.isInNextMonth(oldActiveDate, this._activeDate)) {
+        this.calendarState('right');
+      } else {
+        this.calendarState('left');
+      }
     }
   }
-  private _activeDate = this._util.today();
+  private _activeDate: Date;
 
   /** The currently selected date. */
   @Input()
-  get selected() { return this._selected; }
-  set selected(value) {
-    this._selected = this._locale.parseDate(value);
+  get selected(): Date { return this._selected; }
+  set selected(value: Date) {
+    this._selected = value;
     this._selectedDate = this._getDateInCurrentMonth(this.selected);
   }
   private _selected: Date;
@@ -56,17 +67,11 @@ export class Md2MonthView implements AfterContentInit {
   /** Emits when a new date is selected. */
   @Output() selectedChange = new EventEmitter<Date>();
 
-  /** The label for this month (e.g. "January 2017"). */
-  _monthLabel: string;
-
   /** Grid of calendar cells representing the dates of the month. */
   _weeks: Md2CalendarCell[][];
 
   /** The number of blank cells in the first row before the 1st of the month. */
   _firstWeekOffset: number;
-
-  /** The names of the weekdays. */
-  _weekdays: string[];
 
   /**
    * The date of the month that the currently selected Date falls on.
@@ -77,9 +82,28 @@ export class Md2MonthView implements AfterContentInit {
   /** The date of the month that today falls on. Null if today is in another month. */
   _todayDate: number;
 
-  constructor(private _locale: DateLocale, private _util: DateUtil) {
-    this._weekdays = this._locale.narrowDays.slice(this._locale.firstDayOfWeek)
-      .concat(this._locale.narrowDays.slice(0, this._locale.firstDayOfWeek));
+  /** The names of the weekdays. */
+  _weekdays: { long: string, narrow: string }[];
+
+  _calendarState: string;
+
+  constructor(private _locale: DateLocale, public _util: DateUtil,
+    @Optional() @Inject(MD_DATE_FORMATS) private _dateFormats: MdDateFormats) {
+    if (!this._dateFormats) {
+      throw Error('MD_DATE_FORMATS');
+    }
+
+    const firstDayOfWeek = this._locale.getFirstDayOfWeek();
+    const narrowWeekdays = this._locale.getDayOfWeekNames('narrow');
+    const longWeekdays = this._locale.getDayOfWeekNames('long');
+
+    // Rotate the labels for days of the week based on the configured first day of the week.
+    let weekdays = longWeekdays.map((long, i) => {
+      return { long, narrow: narrowWeekdays[i] };
+    });
+    this._weekdays = weekdays.slice(firstDayOfWeek).concat(weekdays.slice(0, firstDayOfWeek));
+
+    this._activeDate = this._util.today();
   }
 
   ngAfterContentInit(): void {
@@ -88,40 +112,51 @@ export class Md2MonthView implements AfterContentInit {
 
   /** Handles when a new date is selected. */
   _dateSelected(date: number) {
-    if (this._selectedDate == date) {
-      return;
-    }
-    this.selectedChange.emit(new Date(this.activeDate.getFullYear(), this.activeDate.getMonth(), date,
-      this.activeDate.getHours(), this.activeDate.getMinutes(), this.activeDate.getSeconds()));
+    this.selectedChange.emit(this._util.createDate(
+      this._util.getYear(this.activeDate), this._util.getMonth(this.activeDate),
+      date, this._util.getHours(this.activeDate),
+      this._util.getMinutes(this.activeDate),
+      this._util.getSeconds(this.activeDate)));
   }
 
   /** Initializes this month view. */
   private _init() {
     this._selectedDate = this._getDateInCurrentMonth(this.selected);
     this._todayDate = this._getDateInCurrentMonth(this._util.today());
-    this._monthLabel = this._locale.shortMonths[this.activeDate.getMonth()].toLocaleUpperCase();
 
-    let firstOfMonth = new Date(this.activeDate.getFullYear(), this.activeDate.getMonth(), 1,
-      this.activeDate.getHours(), this.activeDate.getMinutes(), this.activeDate.getSeconds());
+    let firstOfMonth = this._util.createDate(this._util.getYear(this.activeDate),
+      this._util.getMonth(this.activeDate), 1,
+      this._util.getHours(this.activeDate),
+      this._util.getMinutes(this.activeDate),
+      this._util.getSeconds(this.activeDate));
     this._firstWeekOffset =
-      (DAYS_PER_WEEK + firstOfMonth.getDay() - this._locale.firstDayOfWeek) % DAYS_PER_WEEK;
+      (DAYS_PER_WEEK + this._locale.getDayOfWeek(firstOfMonth) -
+        this._locale.getFirstDayOfWeek()) % DAYS_PER_WEEK;
 
     this._createWeekCells();
   }
 
-  /** Creates Md2CalendarCells for the dates in this month. */
+  /** Creates MdCalendarCells for the dates in this month. */
   private _createWeekCells() {
-    let daysInMonth = new Date(this.activeDate.getFullYear(), this.activeDate.getMonth() + 1, 0).getDate();
+    let daysInMonth = this._util.getNumDaysInMonth(this.activeDate);
+    let dateNames = this._locale.getDateNames();
     this._weeks = [[]];
     for (let i = 0, cell = this._firstWeekOffset; i < daysInMonth; i++ , cell++) {
       if (cell == DAYS_PER_WEEK) {
         this._weeks.push([]);
         cell = 0;
       }
+      let date = this._util.createDate(
+        this._util.getYear(this.activeDate),
+        this._util.getMonth(this.activeDate), i + 1,
+        this._util.getHours(this.activeDate),
+        this._util.getMinutes(this.activeDate),
+        this._util.getSeconds(this.activeDate));
       let enabled = !this.dateFilter ||
-        this.dateFilter(new Date(this.activeDate.getFullYear(), this.activeDate.getMonth(), i + 1));
+        this.dateFilter(date);
+      let ariaLabel = this._locale.format(date, this._dateFormats.display.dateA11yLabel);
       this._weeks[this._weeks.length - 1]
-        .push(new Md2CalendarCell(i + 1, this._locale.dates[i + 1], enabled));
+        .push(new Md2CalendarCell(i + 1, dateNames[i], ariaLabel, enabled));
     }
   }
 
@@ -130,6 +165,16 @@ export class Md2MonthView implements AfterContentInit {
    * Returns null if the given Date is in another month.
    */
   private _getDateInCurrentMonth(date: Date): number {
-    return this._util.isSameMonthAndYear(date, this.activeDate) ? date.getDate() : null;
+    return this._util.isSameMonthAndYear(date, this.activeDate) ?
+      this._util.getDate(date) : null;
   }
+
+  private calendarState(direction: string): void {
+    this._calendarState = direction;
+  }
+
+  _calendarStateDone() {
+    this._calendarState = '';
+  }
+
 }

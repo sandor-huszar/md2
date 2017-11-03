@@ -1,10 +1,9 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 
 @Component({
-  moduleId: module.id,
   selector: 'select-demo',
-  templateUrl: 'select-demo.html',
-  styleUrls: ['select-demo.css'],
+  templateUrl: '../select/select-demo.html',
+  styleUrls: ['../select/select-demo.css'],
   encapsulation: ViewEncapsulation.None
 })
 export class SelectDemo {
@@ -15,6 +14,7 @@ export class SelectDemo {
   pokemonRequired = false;
   pokemonDisabled = false;
   currentPokemon: string[];
+  currentPokemonFromGroup: string;
 
   items: Array<any> =
   [
@@ -34,6 +34,41 @@ export class SelectDemo {
     { value: 'eevee-4', viewValue: 'Eevee' },
     { value: 'ditto-5', viewValue: 'Ditto' },
     { value: 'psyduck-6', viewValue: 'Psyduck' },
+  ];
+
+  pokemonGroups = [
+    {
+      name: 'Grass',
+      pokemon: [
+        { value: 'bulbasaur-0', viewValue: 'Bulbasaur' },
+        { value: 'oddish-1', viewValue: 'Oddish' },
+        { value: 'bellsprout-2', viewValue: 'Bellsprout' }
+      ]
+    },
+    {
+      name: 'Water',
+      pokemon: [
+        { value: 'squirtle-3', viewValue: 'Squirtle' },
+        { value: 'psyduck-4', viewValue: 'Psyduck' },
+        { value: 'horsea-5', viewValue: 'Horsea' }
+      ]
+    },
+    {
+      name: 'Fire',
+      disabled: true,
+      pokemon: [
+        { value: 'charmander-6', viewValue: 'Charmander' },
+        { value: 'vulpix-7', viewValue: 'Vulpix' },
+        { value: 'flareon-8', viewValue: 'Flareon' }
+      ]
+    },
+    {
+      name: 'Psychic',
+      pokemon: [
+        { value: 'mew-9', viewValue: 'Mew' },
+        { value: 'mewtwo-10', viewValue: 'Mewtwo' },
+      ]
+    }
   ];
 
   setPokemonValue() {

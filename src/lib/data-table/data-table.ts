@@ -11,7 +11,6 @@ import {
   IterableDiffer,
   ViewEncapsulation,
   NgModule,
-  ModuleWithProviders,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -107,6 +106,7 @@ export class Md2DataTable implements DoCheck {
   }
 
   @Output() activePageChange = new EventEmitter<number>();
+  @Output() rowsPerPageChange = new EventEmitter<number>();
   @Output() sortByChange = new EventEmitter<string | string[]>();
   @Output() sortOrderChange = new EventEmitter<string>();
 
@@ -157,7 +157,10 @@ export class Md2DataTable implements DoCheck {
     if (this.rowsPerPage !== rowsPerPage || this.activePage !== activePage) {
       this.activePage = this.activePage !== activePage ?
         activePage : this.calculateNewActivePage(this.rowsPerPage, rowsPerPage);
-      this.rowsPerPage = rowsPerPage;
+      if (this.rowsPerPage !== rowsPerPage) {
+        this._rowsPerPage = rowsPerPage;
+        this.rowsPerPageChange.emit(this.rowsPerPage);
+      }
       this.isDataChanged = true;
       this.onPageChange.emit({
         activePage: this.activePage,
@@ -270,6 +273,7 @@ export class Md2Pagination {
 
   @Input() rowsPerPageSet: any = [];
   @Input() md2Table: Md2DataTable;
+  @Input() paginationLabel: string = 'Rows per page:';
 
   _rowsPerPage: number;
   _dataLength: number = 0;
@@ -307,14 +311,8 @@ export const MD2_DATA_TABLE_DIRECTIVES: any[] = [
 ];
 
 @NgModule({
-  imports: [CommonModule, FormsModule, Md2SelectModule.forRoot()],
+  imports: [CommonModule, FormsModule, Md2SelectModule],
   exports: MD2_DATA_TABLE_DIRECTIVES,
   declarations: MD2_DATA_TABLE_DIRECTIVES,
 })
-export class Md2DataTableModule {
-  static forRoot(): ModuleWithProviders {
-    return {
-      ngModule: Md2DataTableModule
-    };
-  }
-}
+export class Md2DataTableModule { }

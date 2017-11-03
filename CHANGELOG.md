@@ -1,3 +1,137 @@
+<a name="0.0.29"></a>
+### Bug Fixes
+* Solved #275 Select component doesnt accept 0 and false values(ngModel) in md2-option
+
+<a name="0.0.27"></a>
+### Bug Fixes
+
+* Solved #272 [Question] Md2Autocomplete and textChange emit old value
+* Solved #269 Disabled dates on Datepicker (Month mode) can still be selected 
+* Solved tslint issues
+
+### Features
+* Solved #268 DataTable: pagination label could be an attribute
+
+
+<a name="0.0.27"></a>
+### Bug Fixes
+
+* Solved #272 [Question] Md2Autocomplete and textChange emit old value
+* Solved #269 Disabled dates on Datepicker (Month mode) can still be selected 
+
+### Features
+* Solved #268 DataTable: pagination label could be an attribute
+
+
+<a name="0.0.26"></a>
+### Bug Fixes
+
+* Solved #254 Custom Id for md2-datepicker
+* fix(chips) Chips  pasting issue #220
+* solved duplicate values in chips using in autocomplete
+
+
+<a name="0.0.25"></a>
+## [0.0.25](https://github.com/Promact/md2/compare/0.0.24...0.0.25) (2017-06-22)
+
+### Bug Fixes
+
+* fix(chips) autocomplete-item-value binding issue #240
+* #242 Runtime Error: MD_DATE_FORMATS (Datepicker)
+
+
+<a name="0.0.24"></a>
+## [0.0.24](https://github.com/Promact/md2/compare/0.0.22...v0.0.24) (2017-06-13)
+
+### Bug Fixes
+
+* fixed datepicker minor issues
+
+<a name="0.0.23"></a>
+## [0.0.23](https://github.com/Promact/md2/compare/0.0.22...v0.0.23) (2017-06-13)
+
+### Breaking Changes
+
+* refactored datepicker component with its few properties [API Docs](https://github.com/Promact/md2/blob/master/src/lib/datepicker/README.md).
+
+
+### Bug Fixes
+
+* fix(datepicker) invalid time after selecting it #227
+* #233 Chips component always send changes event
+
+
+### Features
+
+* feat(datepicker) implementation for month picker support #168
+
+
+
+<a name="0.0.22"></a>
+## [0.0.22](https://github.com/Promact/md2/compare/0.0.21...v0.0.22) (2017-06-07)
+
+
+### Bug Fixes
+
+* fix(datepicker) invalid time after selecting it #227
+* fix(tabs) runtime forEach issue #211
+
+
+### Features
+
+* feat(data-table) added event for rows per page change #228
+
+
+<a name="0.0.21"></a>
+## [0.0.21](https://github.com/Promact/md2/compare/0.0.20...v0.0.21) (2017-05-31)
+
+
+### Bug Fixes
+
+* fix(select) design with multiple select #221
+* fix(datepicker) format date issue
+* fix(datepicker) prevent unnecessary fire change event onblur of textbox
+* fix(tags) menu option design improvement
+
+
+
+<a name="0.0.20"></a>
+## [0.0.20](https://github.com/Promact/md2/compare/0.0.19...v0.0.20) (2017-05-29)
+
+
+### Breaking Changes
+
+* The forRoot method on all MD2 modules has been removed. It was previously deprecated and a no-op. Importing the modules directly will have the same effect.
+
+
+### Features
+
+* feat(select) option group
+
+
+### Bug Fixes
+
+* datepicker issue ([fab045c](https://github.com/Promact/md2/commit/fab045c))
+* datepicker toggle issue ([c4ef84d](https://github.com/Promact/md2/commit/c4ef84d))
+* rollup warnings while compilation ([a09b4d6](https://github.com/Promact/md2/commit/a09b4d6))
+* usage of dynamic i18n arrays ([dd69e76](https://github.com/Promact/md2/commit/dd69e76))
+* fix(tabs) responsive design destort issue
+
+
+<a name="0.0.19"></a>
+## [0.0.19](https://github.com/Promact/md2/compare/0.0.18...v0.0.19) (2017-04-20)
+
+### Bug Fixes
+
+* **datepicker:** emit change when time changed ([7058c17](https://github.com/Promact/md2/commit/7058c17))
+* fixed datepicker format related issues
+
+### Features
+
+* zero padded hours and minutes ([2b0ffec](https://github.com/Promact/md2/commit/2b0ffec))
+
+
+
 <a name="0.0.18"></a>
 ## [0.0.18](https://github.com/Promact/md2/compare/0.0.17...v0.0.18) (2017-03-31)
 

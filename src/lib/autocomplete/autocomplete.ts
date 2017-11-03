@@ -6,17 +6,12 @@ import {
   forwardRef,
   Input,
   Output,
-  ViewEncapsulation,
-  NgModule,
-  ModuleWithProviders
+  ViewEncapsulation
 } from '@angular/core';
 import {
   NG_VALUE_ACCESSOR,
   ControlValueAccessor,
-  FormsModule,
 } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { HighlightPipe } from './autocomplete-pipe';
 import {
   coerceBooleanProperty,
   UP_ARROW,
@@ -88,7 +83,7 @@ export class Md2Autocomplete implements AfterContentInit, ControlValueAccessor {
   private _disabled: boolean = false;
   private _isInitialized: boolean = false;
 
-  _onChange = (value: any) => { };
+  _onChange: (value: any) => void = () => { };
   _onTouched = () => { };
 
   private _items: Array<any> = [];
@@ -199,9 +194,12 @@ export class Md2Autocomplete implements AfterContentInit, ControlValueAccessor {
    * input event listner
    * @param event
    */
+  _handleKeyup(event: KeyboardEvent) {
+    this.textChange.emit(this._inputValue);
+  }
+
   _handleKeydown(event: KeyboardEvent) {
     if (this.disabled) { return; }
-    this.textChange.emit(this._inputValue);
     switch (event.keyCode) {
       case TAB: this._handleMouseLeave(); break;
       case ESCAPE:
@@ -361,20 +359,4 @@ export class Md2Autocomplete implements AfterContentInit, ControlValueAccessor {
     this.disabled = isDisabled;
   }
 
-}
-
-export const MD2_AUTOCOMPLETE_DIRECTIVES = [Md2Autocomplete, HighlightPipe];
-
-@NgModule({
-  imports: [CommonModule, FormsModule],
-  exports: MD2_AUTOCOMPLETE_DIRECTIVES,
-  declarations: MD2_AUTOCOMPLETE_DIRECTIVES,
-})
-export class Md2AutocompleteModule {
-  static forRoot(): ModuleWithProviders {
-    return {
-      ngModule: Md2AutocompleteModule,
-      providers: []
-    };
-  }
 }

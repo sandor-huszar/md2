@@ -2,17 +2,13 @@ import {
   Component,
   Injectable,
   ViewContainerRef,
-  NgModule,
-  ModuleWithProviders,
   ViewEncapsulation,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import {
   Overlay,
   OverlayState,
   OverlayRef,
   ComponentPortal,
-  OVERLAY_PROVIDERS
 } from '../core';
 
 export class Toast {
@@ -183,22 +179,4 @@ export class Md2ToastComponent {
    */
   hasToast(): boolean { return this.toasts.length > 0; }
 
-}
-
-export const MD2_TOAST_DIRECTIVES: any[] = [Md2ToastComponent];
-
-@NgModule({
-  imports: [CommonModule],
-  exports: MD2_TOAST_DIRECTIVES,
-  declarations: MD2_TOAST_DIRECTIVES,
-  entryComponents: MD2_TOAST_DIRECTIVES,
-  providers: [Md2Toast, Md2ToastConfig, OVERLAY_PROVIDERS]
-})
-export class Md2ToastModule {
-  static forRoot(): ModuleWithProviders {
-    return {
-      ngModule: Md2ToastModule,
-      providers: []
-    };
-  }
 }

@@ -6,7 +6,6 @@ import {
   ViewChild,
   NgModule,
   ElementRef,
-  ModuleWithProviders,
   EventEmitter,
   AfterContentInit,
   HostListener,
@@ -20,7 +19,7 @@ import {
 } from '@angular/forms';
 
 import { CommonModule } from '@angular/common';
-import { Md2AutocompleteModule } from '../autocomplete/autocomplete';
+import { Md2AutocompleteModule } from '../autocomplete/index';
 import {
   ENTER,
   SPACE,
@@ -83,29 +82,31 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
   @Input() allowedPattern: RegExp = /.+/;
   @Input() ngModel: string[];
   @Input() pasteSplitPattern: string = ',';
-  @Input() placeholder: string = 'Add New';
+  @Input() placeholder: string = '';
   @Input() autocompleteDataList: string[];
   @Input() isAutoComplete: boolean = false;
   @Input() isRemovable: boolean = true;
   @Input() disabled: boolean = false;
   @Input() minChips: number = 0;
   @Input() maxChips: number = 10000;
+  @Input() type: string = 'text';
   @Input() id: string = 'md2-chips-' + (++nextId);
   @Input('autocomplete-item-text') autocompleteItemText: string = 'text';
   @Input('autocomplete-item-value') autocompleteItemValue: string = 'value';
   @Input('item-text') textKey: string = 'text';
-  @Input('item-value') valueKey: string = 'value';
+  @Input('item-value') valueKey: string = null;
 
   @Output() change: EventEmitter<any> = new EventEmitter<any>();
   @ViewChild('chipInputForm') chipInputForm: NgForm;
 
-  _onChange = (value: any) => { };
+  _onChange: (value: any) => void = () => { };
   _onTouched = () => { };
 
   chipItemList: Array<Chip> = [];
   inputValue: string = '';
   selectedChip: number = -1;
   inputFocused: boolean = false;
+  autoCompleteFocued: boolean = false;
 
   private _value: any = '';
   private splitRegExp: RegExp;
@@ -144,10 +145,13 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
     this._emitChangeEvent();
   }
 
+  getFocusAutocomplete() {
+    this._onTouched();
+  }
+
   changeAutocomplete(value: any) {
     if (value) {
-      let objText = value.value;
-      this.addNewChip(objText);
+      this.addNewChip(value.value);
       this.item = null;
     }
   }
@@ -228,20 +232,22 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
     if (this.disabled) { return; }
     if (!this.isAutoComplete) {
       this.elementRef.nativeElement.querySelector('input.chip-input').focus();
+    } else {
+      this.autoCompleteFocued = true;
+      this._onTouched();
     }
     this._resetSelected();
   }
 
-  inputBlurred(event: Event): void {
+  inputBlurred(): void {
     this.inputFocused = false;
     if (this.inputValue) {
       this.addNewChip(this.inputValue);
     }
     this._onTouched();
-    this.addNewChip(this.inputValue);
   }
 
-  inputFocus(event: Event): void {
+  inputFocus(): void {
     if (this.disabled) { return; }
     this.inputFocused = true;
   }
@@ -249,10 +255,8 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
   inputPaste(event: any): void {
     let clipboardData = event.clipboardData ||
       (event.originalEvent && event.originalEvent.clipboardData);
-    let pastedString = clipboardData.getData('text/plain');
-    let chips = this.addRegExpString(pastedString);
-    let chipsToAdd = chips.filter((chip) => this._isValid(chip));
-    this.addNewChip(chipsToAdd);
+    let pastedString = clipboardData.getData('text/plain').trim();
+    this.addNewChip(pastedString);
     setTimeout(() => this._resetInput());
   }
 
@@ -277,19 +281,17 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
     }
   }
 
-  private addRegExpString(chipInputString: string): string[] {
-    chipInputString = chipInputString.trim();
-    let chips = chipInputString.split(this.splitRegExp);
-    return chips.filter((chip) => !!chip);
-  }
-
   private _isValid(chipString: any): boolean {
-    if (chipString) {
-      let isExist: any;
+    let typeString = typeof chipString;
+    let isExist: any;
+    if (typeString === 'string') {
+      chipString = chipString.trim();
       isExist = this.chipItemList.filter((chip) => chip.text === chipString);
-      if (this.chipItemList.indexOf(chipString) === -1 && (isExist.length ? false : true)) {
-        return this.allowedPattern.test(chipString);
-      }
+    } else {
+      isExist = this.chipItemList.filter((chip) => chip.text === chipString.text);
+    }
+    if (this.chipItemList.indexOf(chipString) === -1 && (isExist.length ? false : true)) {
+      return this.allowedPattern.test(chipString);
     }
   }
   /**
@@ -299,13 +301,10 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
   private addNewChip(chips: any): void {
     let validInput = this._isValid(chips);
     if (validInput) {
-      if (this.maxChips) {
-        if (this.chipItemList.length < this.maxChips) {
-          this.chipItemList.push(new Chip(chips,
-            this.autocompleteItemText, this.autocompleteItemValue));
-        }
+      if (this.maxChips && this.maxChips < this.chipItemList.length - 1) {
+        return;
       } else {
-        this.chipItemList.push(new Chip(chips, this.textKey, this.valueKey));
+        this.chipItemList.push(new Chip(chips, this.autocompleteItemText, this.autocompleteItemValue));
         this.item = null;
       }
     }
@@ -351,14 +350,16 @@ export class Md2Chips implements ControlValueAccessor, AfterContentInit {
    * update value
    */
   private updateValue() {
-
     this._value = new Array<any>();
-
     this._value = this.chipItemList.map((chip: any) => {
-      let a: any = {};
-      a[this.textKey] = chip.text;
-      a[this.valueKey] = chip.value;
-      return a;
+      if (this.valueKey) {
+        let c: any = {};
+        c[this.textKey] = chip.text;
+        c[this.valueKey] = chip.value;
+        return c;
+      } else {
+        return chip.value;
+      }
     });
     this._emitChangeEvent();
   }
@@ -396,11 +397,4 @@ export const MD2_CHIPS_DIRECTIVES: any[] = [Md2Chips];
   declarations: MD2_CHIPS_DIRECTIVES,
   exports: MD2_CHIPS_DIRECTIVES
 })
-export class Md2ChipsModule {
-  static forRoot(): ModuleWithProviders {
-    return {
-      ngModule: Md2ChipsModule,
-      providers: []
-    };
-  }
-}
+export class Md2ChipsModule { }

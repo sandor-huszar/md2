@@ -2,18 +2,14 @@ import { DateLocale } from './date-locale';
 
 export class DateUtil {
 
-  today(): Date {
-    return new Date();
-  }
-
   _locale: DateLocale = new DateLocale();
 
   parseDateMap: any = {
     'y': 0,      // placeholder -> ctorIndex
     'Y': [0, -2000],
     'M': [1, 1], // placeholder -> [ctorIndex, offset|value array]
-    'n': [1, this._locale.shortMonths],
-    'N': [1, this._locale.fullMonths],
+    'n': [1, this._locale.getMonthNames('short')],
+    'N': [1, this._locale.getMonthNames('long')],
     'd': 2,
     'm': 4,
     'H': 3,
@@ -22,7 +18,8 @@ export class DateUtil {
     'k': [3, 1],
     's': 5,
     'S': 6,
-    'a': [3, ['am', 'pm']]
+    'a': [3, ['am', 'pm']],
+    'A': [3, ['AM', 'PM']]
   };
 
   replace(s: string, regexp: any, sub?: string) {
@@ -112,7 +109,7 @@ export class DateUtil {
           timezoneIndex = reIndex;
           reIndex += 3;
           return '([+-])(\\d\\d)(\\d\\d)';
-        } else if (/[Nna]/.test(placeholderChar)) {
+        } else if (/[NnaA]/.test(placeholderChar)) {
           indexMap[reIndex++] = [placeholderChar, param && param.split(',')];
           return '([a-zA-Z\\u0080-\\u1fff]+)';
         } else if (/w/i.test(placeholderChar)) {
@@ -146,7 +143,7 @@ export class DateUtil {
         if (listValue == null) {
           return undefined;
         }
-        if (placeholderChar == 'a') {
+        if (placeholderChar == 'a' || placeholderChar == 'A') {
           ctorArgs[ctorIndex] += listValue * 12;
         } else {
           ctorArgs[ctorIndex] = listValue;
@@ -166,6 +163,142 @@ export class DateUtil {
     return d;
   }
 
+  today(): Date {
+    return new Date();
+  }
+
+  parse(value: any): Date | null {
+    let timestamp = typeof value == 'number' ? value : Date.parse(value);
+    return isNaN(timestamp) ? null : new Date(timestamp);
+  }
+
+  getYear(date: Date): number {
+    return date.getFullYear();
+  }
+
+  getMonth(date: Date): number {
+    return date.getMonth();
+  }
+
+  getDate(date: Date): number {
+    return date.getDate();
+  }
+
+  getHours(date: Date): number {
+    return date.getHours();
+  }
+
+  getMinutes(date: Date): number {
+    return date.getMinutes();
+  }
+
+  getSeconds(date: Date): number {
+    return date.getSeconds();
+  }
+
+  createDate(year: number, month: number, date: number,
+    hours: number, minutes: number, seconds: number): Date {
+    // Check for invalid month and date (except upper bound on date which we have to check after
+    // creating the Date).
+    if (month < 0 || month > 11 || date < 1) {
+      return null;
+    }
+
+    let result = this._createDateWithOverflow(year, month, date, hours, minutes, seconds);
+
+    // Check that the date wasn't above the upper bound for the month, causing the month to
+    // overflow.
+    if (result.getMonth() != month) {
+      return null;
+    }
+
+    return result;
+  }
+
+  clone(date: Date): Date {
+    return this.createDate(this.getYear(date), this.getMonth(date), this.getDate(date),
+      this.getHours(date), this.getMinutes(date), this.getSeconds(date));
+  }
+
+  getNumDaysInMonth(date: Date): number {
+    return this.getDate(this._createDateWithOverflow(
+      this.getYear(date), this.getMonth(date) + 1, 0, 0, 0, 0));
+  }
+
+  addCalendarYears(date: Date, years: number): Date {
+    return this.addCalendarMonths(date, years * 12);
+  }
+
+  addCalendarMonths(date: Date, months: number): Date {
+    let newDate = this._createDateWithOverflow(
+      this.getYear(date), this.getMonth(date) + months, this.getDate(date), this.getHours(date),
+      this.getMinutes(date), this.getSeconds(date));
+
+    // It's possible to wind up in the wrong month if the original month has more days than the new
+    // month. In this case we want to go to the last day of the desired month.
+    // Note: the additional + 12 % 12 ensures we end up with a positive number, since JS % doesn't
+    // guarantee this.
+    if (this.getMonth(newDate) != ((this.getMonth(date) + months) % 12 + 12) % 12) {
+      newDate = this._createDateWithOverflow(this.getYear(newDate), this.getMonth(newDate), 0,
+        this.getHours(newDate), this.getMinutes(newDate), this.getSeconds(newDate));
+    }
+
+    return newDate;
+  }
+
+  addCalendarDays(date: Date, days: number): Date {
+    return this._createDateWithOverflow(
+      this.getYear(date), this.getMonth(date), this.getDate(date) + days,
+      this.getHours(date), this.getMinutes(date), this.getSeconds(date));
+  }
+
+  addCalendarHours(date: Date, hours: number): Date {
+    return this._createDateWithOverflow(
+      this.getYear(date), this.getMonth(date), this.getDate(date),
+      this.getHours(date) + hours, this.getMinutes(date), this.getSeconds(date));
+  }
+
+  addCalendarMinutes(date: Date, minutes: number): Date {
+    return this._createDateWithOverflow(
+      this.getYear(date), this.getMonth(date), this.getDate(date),
+      this.getHours(date), this.getMinutes(date) + minutes, this.getSeconds(date));
+  }
+  getISODateString(date: Date): string {
+    return [
+      date.getUTCFullYear(),
+      this._2digit(date.getUTCMonth() + 1),
+      this._2digit(date.getUTCDate())
+    ].join('-');
+  }
+
+  /** Creates a date but allows the month and date to overflow. */
+  private _createDateWithOverflow(year: number, month: number, date: number,
+    hours: number, minutes: number, seconds: number) {
+    let result = new Date(year, month, date, hours, minutes, seconds);
+
+    // We need to correct for the fact that JS native Date treats years in range [0, 99] as
+    // abbreviations for 19xx.
+    if (year >= 0 && year < 100) {
+      result.setFullYear(this.getYear(result) - 1900);
+    }
+    return result;
+  }
+
+  /**
+   * Pads a number to make it two digits.
+   * @param n The number to pad.
+   * @returns The padded number.
+   */
+  private _2digit(n: number) {
+    return ('00' + n).slice(-2);
+  }
+
+  compareDate(first: Date, second: Date): number {
+    return this.getYear(first) - this.getYear(second) ||
+      this.getMonth(first) - this.getMonth(second) ||
+      this.getDate(first) - this.getDate(second);
+  }
+
   /**
    * Gets the first day of the month for the given date's month.
    * @param {Date} date
@@ -182,7 +315,7 @@ export class DateUtil {
    * @returns {Date}
    */
   getFirstDateOfMonth(date: Date) {
-    return new Date(date.getFullYear(), date.getMonth(), 1, date.getHours(), date.getMinutes());
+    return new Date(date.getFullYear(), date.getMonth(), 1);
   }
 
   /**
@@ -215,6 +348,16 @@ export class DateUtil {
   }
 
   /**
+   * Gets whether two dates have the same year.
+   * @param {Date} d1
+   * @param {Date} d2
+   * @returns {boolean}
+   */
+  isSameYear(d1: Date, d2: Date) {
+    return d1 && d2 && d1.getFullYear() === d2.getFullYear();
+  }
+
+  /**
    * Gets whether two dates have the same month and year.
    * @param {Date} d1
    * @param {Date} d2
@@ -232,6 +375,26 @@ export class DateUtil {
    */
   isSameDay(d1: Date, d2: Date) {
     return d1 && d2 && d1.getDate() == d2.getDate() && this.isSameMonthAndYear(d1, d2);
+  }
+
+  /**
+   * Gets whether two dates are the same hours.
+   * @param {Date} d1
+   * @param {Date} d2
+   * @returns {boolean}
+   */
+  isSameHour(d1: Date, d2: Date) {
+    return d1 && d2 && d1.getHours() == d2.getHours() && this.isSameDay(d1, d2);
+  }
+
+  /**
+   * Gets whether two dates are the same minutes.
+   * @param {Date} d1
+   * @param {Date} d2
+   * @returns {boolean}
+   */
+  isSameMinute(d1: Date, d2: Date) {
+    return d1 && d2 && d1.getMinutes() == d2.getMinutes() && this.isSameHour(d1, d2);
   }
 
   /**
@@ -412,6 +575,20 @@ export class DateUtil {
   }
 
   /**
+   * Checks if a date is within a min and max range.
+   * If minDate or maxDate are not dates, they are ignored.
+   * @param {Date} date
+   * @param {Date} minDate
+   * @param {Date} maxDate
+   */
+  isFullDateWithinRange(date: Date, minDate: Date, maxDate: Date) {
+    minDate = this.isValidDate(minDate) ? minDate : null;
+    maxDate = this.isValidDate(maxDate) ? maxDate : null;
+    return (!minDate || minDate <= date) &&
+      (!maxDate || maxDate >= date);
+  }
+
+  /**
    * Gets a new date incremented by the given number of years. Number of years can be negative.
    * See `incrementMonths` for notes on overflow for specific dates.
    * @param {Date} date
@@ -477,6 +654,44 @@ export class DateUtil {
 
     return (!minDate || minDate.getFullYear() < year || minDate.getMonth() <= month) &&
       (!maxDate || maxDate.getFullYear() > year || maxDate.getMonth() >= month);
+  }
+
+  /**
+   * Compares two dates.
+   * @param first The first date to compare.
+   * @param second The second date to compare.
+   * @returns 0 if the dates are equal, a number less than 0 if the first date is earlier,
+   *     a number greater than 0 if the first date is later.
+   */
+  compareDateAndTime(first: Date, second: Date): number {
+    return this.getYear(first) - this.getYear(second) ||
+      this.getMonth(first) - this.getMonth(second) ||
+      this.getDate(first) - this.getDate(second) ||
+      this.getHours(first) - this.getDate(second) ||
+      this.getMinutes(first) - this.getDate(second) ||
+      this.getSeconds(first) - this.getDate(second);
+  }
+
+  /**
+   * Checks if two dates are equal.
+   * @param first The first date to check.
+   * @param second The second date to check.
+   * @returns {boolean} Whether the two dates are equal.
+   *     Null dates are considered equal to other null dates.
+   */
+  sameDate(first: Date | null, second: Date | null): boolean {
+    return first && second ? !this.compareDate(first, second) : first == second;
+  }
+
+  /**
+   * Checks if two dates are equal.
+   * @param first The first date to check.
+   * @param second The second date to check.
+   * @returns {boolean} Whether the two dates are equal.
+   *     Null dates are considered equal to other null dates.
+   */
+  sameDateAndTime(first: Date | null, second: Date | null): boolean {
+    return first && second ? !this.compareDateAndTime(first, second) : first == second;
   }
 
 }
