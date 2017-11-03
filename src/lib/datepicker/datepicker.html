@@ -22,6 +22,7 @@
            [tabindex]="tabindex"
            [disabled]="disabled"
            autocomplete="off"
+           [readonly]="readonly"
            [value]="_inputValue"
            (change)="$event.stopPropagation()"
            (click)="_handleFocus()"
